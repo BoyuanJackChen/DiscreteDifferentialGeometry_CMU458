@@ -97,8 +97,6 @@ class SimplicialComplexOperators {
      */
     buildEdgeVector(subset) {
 		var vector = new Array(mesh.edges.length).fill(0);
-		console.log("Subset has this many edges: ");
-		console.log(subset.edges.size);
 		for(let e_index of subset.edges) {
 			vector[e_index] = 1;
 		}
@@ -114,8 +112,6 @@ class SimplicialComplexOperators {
      */
     buildFaceVector(subset) {
 		var vector = new Array(mesh.faces.length).fill(0);
-		console.log("Subset has this many faces: ");
-		console.log(subset.faces.size);
 		for(let f_index of subset.faces) {
 			vector[f_index] = 1;
 		}
@@ -246,7 +242,7 @@ class SimplicialComplexOperators {
      * @returns {boolean} True if the given subset is a subcomplex and false otherwise.
      */
     isComplex(subset) {
-            // TODO
+		return (this.closure(subset).equals(subset));
     }
 
     /** Returns the degree if the given subset is a pure subcomplex and -1 otherwise.
@@ -255,7 +251,18 @@ class SimplicialComplexOperators {
      * @returns {number} The degree of the given subset if it is a pure subcomplex and -1 otherwise.
      */
     isPureComplex(subset) {
-            // TODO
+		if (this.isComplex(subset)) {
+			if (subset.faces.size > 0)
+				return 2;
+			else if (subset.edges.size > 0)
+				return 1;
+			else if (subset.vertices.size > 0)
+				return 0;
+			else 
+				return -1;
+		} 
+		else 
+			return -1;
     }
 
     /** Returns the boundary of a subset.
@@ -264,8 +271,22 @@ class SimplicialComplexOperators {
      * @returns {module:Core.MeshSubset} The boundary of the given pure subcomplex.
      */
     boundary(subset) {
-            // TODO
-
-            return subset; // placeholder
+		var result = new MeshSubset();
+		// Get all the outside edges first
+		for (let e_index of subset.edges) {
+			var face1_index = this.mesh.edges[e_index].halfedge.face.index;
+			var face2_index = this.mesh.edges[e_index].halfedge.twin.face.index;
+			if (!((subset.faces.has(face1_index)) && (subset.faces.has(face2_index)))) {
+				result.addEdge(e_index);
+			}
+		}
+		// Then add the vertices attached to these edges
+		for (let e_index of result.edges) {
+			var v_index1 = this.mesh.edges[e_index].halfedge.vertex.index;
+			var v_index2 = this.mesh.edges[e_index].halfedge.twin.vertex.index;
+			result.addVertex(v_index1);
+			result.addVertex(v_index2);
+		}
+        return result; 
     }
 }
