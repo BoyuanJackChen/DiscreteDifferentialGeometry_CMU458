@@ -154,7 +154,7 @@ class SimplicialComplexOperators {
      */
     star(subset) {
 		// The star should at least have all the original components
-		var result = subset;  
+		var result = MeshSubset.deepCopy(subset);  
 		var vertexVector = this.buildVertexVector(subset);
 		var edgeVector = this.buildEdgeVector(subset);
 
@@ -196,7 +196,7 @@ class SimplicialComplexOperators {
      */
     closure(subset) {
 		// The closure should at least have all the original components
-		var result = subset; 
+		var result = MeshSubset.deepCopy(subset); 
 		var edgeVector = this.buildEdgeVector(subset); 
 		var faceVector = this.buildFaceVector(subset);
 		// Vertices do not lead to extra elements in closre. 
@@ -232,9 +232,12 @@ class SimplicialComplexOperators {
      * @returns {module:Core.MeshSubset} The link of the given subset.
      */
     link(subset) {
-            // TODO
-
-            return subset; // placeholder
+		var left  = this.closure(this.star(subset));
+		var right = this.star(this.closure(subset));
+		left.deleteVertices(right.vertices);
+		left.deleteEdges(right.edges);
+		left.deleteFaces(right.faces);
+        return left; 
     }
 
     /** Returns true if the given subset is a subcomplex and false otherwise.
