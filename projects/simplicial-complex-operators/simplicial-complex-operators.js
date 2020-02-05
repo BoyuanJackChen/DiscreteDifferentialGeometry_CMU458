@@ -274,6 +274,11 @@ class SimplicialComplexOperators {
 		var result = new MeshSubset();
 		// Get all the outside edges first
 		for (let e_index of subset.edges) {
+			// If edge is on the boundary of a mesh, it must be the "boundary" of this subset.
+			if (this.mesh.edges[e_index].onBoundary) {
+				result.addEdge(e_index);
+				continue;
+			}
 			var face1_index = this.mesh.edges[e_index].halfedge.face.index;
 			var face2_index = this.mesh.edges[e_index].halfedge.twin.face.index;
 			if (!((subset.faces.has(face1_index)) && (subset.faces.has(face2_index)))) {
