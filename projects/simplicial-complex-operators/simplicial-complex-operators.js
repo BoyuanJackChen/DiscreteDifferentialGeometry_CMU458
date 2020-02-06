@@ -272,17 +272,17 @@ class SimplicialComplexOperators {
      */
     boundary(subset) {
 		var result = new MeshSubset();
-		// Get all the outside edges first
-		for (let e_index of subset.edges) {
-			// If edge is on the boundary of a mesh, it must be the "boundary" of this subset.
-			if (this.mesh.edges[e_index].onBoundary) {
-				result.addEdge(e_index);
-				continue;
-			}
-			var face1_index = this.mesh.edges[e_index].halfedge.face.index;
-			var face2_index = this.mesh.edges[e_index].halfedge.twin.face.index;
-			if (!((subset.faces.has(face1_index)) && (subset.faces.has(face2_index)))) {
-				result.addEdge(e_index);
+		// Add the border edges by going through faces
+		for (let f_index of subset.faces) {
+			var fei = this.mesh.faces[f_index].adjacentEdges();
+			for (let edge of fei) {
+				if (edge.onBoundary()) {
+					result.addEdge(edge.index);
+				}
+				else if (!(subset.faces.has(edge.halfedge.face) 
+					&& subset.faces.has(edge.halfedge.twin.face))) {
+					result.addEdge(edge.index);
+				}
 			}
 		}
 		// Then add the vertices attached to these edges
