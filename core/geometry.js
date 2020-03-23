@@ -199,9 +199,11 @@ class Geometry {
 	 * @returns {number}
 	 */
 	cotan(h) {
-		// TODO
+		if (h.onBoundary) return 0.0; 
+		let B = this.vector(h.next).negated();
+		let A = this.vector(h.prev);
 
-		return 0.0; // placeholder
+		return A.dot(B) / (A.cross(B)).norm();  // A neat way to get the cotan
 	}
 
 	/**
@@ -224,10 +226,16 @@ class Geometry {
 	 * @returns {number}
 	 */
 	barycentricDualArea(v) {
-		// TODO
+		let totalArea = 0.0; 
 
-		return 0.0; // placeholder
+		for (let f of v.adjacentFaces()){   // iterator
+			totalArea += this.area(f);
+		}   
+		return totalArea / 3.0;
 	}
+	// Barycenter is always inside the triangle. The outside one is circumcenter. 
+	// Barycenter: ???????
+	// Each triangle assigns each vertix a third of its area
 
 	/**
 	 * Computes the circumcentric dual area of a vertex.
