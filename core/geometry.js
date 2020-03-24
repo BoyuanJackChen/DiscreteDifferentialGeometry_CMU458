@@ -187,9 +187,9 @@ class Geometry {
 	 * @returns {number} The angle clamped between 0 and π.
 	 */
 	angle(c) {
-		// TODO
-
-		return 0.0; // placeholder
+        let h = c.halfedge;
+        let cotan = this.cotan(h);
+        return Math.PI / 2 - Math.atan(cotan); // From the internet. atan has range [-π/2, π/2]
 	}
 
 	/**
@@ -214,9 +214,14 @@ class Geometry {
 	 * @returns {number} The dihedral angle.
 	 */
 	dihedralAngle(h) {
-		// TODO
+        let N_ijk = faceNormal(h.face);
+        let N_jil = faceNormal(h.twin.face);
+        
+        let e_ij_unit = this.vector(h).unit();
+        let y = e_ij_unit.dot(N_ijk.cross(N_jil));
+        let x = N_ijk.dot(N_jil);
 
-		return 0.0; // placeholder
+		return Math.atan2(y,x); 
 	}
 
 	/**
@@ -288,9 +293,12 @@ class Geometry {
 	 * @returns {module:LinearAlgebra.Vector}
 	 */
 	vertexNormalAngleWeighted(v) {
-		// TODO
-
-		return new Vector(); // placeholder
+        let totalNormal = 0.0; 
+        for (let c of v.adjacentCorners()){   // iterator
+            let N = this.faceNormal(c.halfedge.face);
+			totalNormal += this.angle(c) * N;
+		}   
+		return totalNormal;
 	}
 
 	/**
