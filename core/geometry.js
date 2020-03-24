@@ -187,9 +187,14 @@ class Geometry {
 	 * @returns {number} The angle clamped between 0 and π.
 	 */
 	angle(c) {
-        let h = c.halfedge;
-        let cotan = this.cotan(h);
-        return Math.PI / 2 - Math.atan(cotan); // From the internet. atan has range [-π/2, π/2]
+        let h1 = c.halfedge;
+        let h2 = h1.next;
+        let v2 = this.vector(h2);
+        let h3 = h1.prev;
+        let v3 = this.vector(h3);
+        //let cotan = this.cotan(h);
+        let cos_val = v2.dot(v3)/(v2.norm()*v3.norm());
+        return Math.PI - Math.acos(cos_val); // From the internet. atan has range [-π/2, π/2]
 	}
 
 	/**
@@ -293,12 +298,14 @@ class Geometry {
 	 * @returns {module:LinearAlgebra.Vector}
 	 */
 	vertexNormalAngleWeighted(v) {
-        let totalNormal = 0.0; 
+        let totalNormal  = new Vector();
         for (let c of v.adjacentCorners()){   // iterator
             let N = this.faceNormal(c.halfedge.face);
-			totalNormal += this.angle(c) * N;
-		}   
-		return totalNormal;
+            N.scaleBy(this.angle(c));
+            totalNormal.incrementBy(N);
+            //console.log(totalNormal);
+		} 
+		return totalNormal.unit();
 	}
 
 	/**
@@ -332,9 +339,21 @@ class Geometry {
 	 * @returns {module:LinearAlgebra.Vector}
 	 */
 	vertexNormalSphereInscribed(v) {
-		// TODO
-
-		return new Vector(); // placeholder
+        let totalNormal  = new Vector();
+        for (let c of v.adjacentCorners()) {   // iterator
+            let h1 = c.halfedge;
+            let h2 = h1.next;
+            let v2 = this.vector(h2);
+            v2.scaleBy(1/v2.norm2());
+            // ? Why shouldn't I take a twin here? 
+            let h3 = h1.prev;
+            let v3 = this.vector(h3);
+            v3.scaleBy(1/v3.norm2());
+            let thecross = v2.cross(v3);
+            totalNormal.incrementBy(thecross);
+            // console.log(totalNormal);
+		} 
+		return totalNormal.unit();
 	}
 
 	/**
