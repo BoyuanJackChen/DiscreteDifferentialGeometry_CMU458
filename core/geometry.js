@@ -219,8 +219,8 @@ class Geometry {
 	 * @returns {number} The dihedral angle.
 	 */
 	dihedralAngle(h) {
-        let N_ijk = faceNormal(h.face);
-        let N_jil = faceNormal(h.twin.face);
+        let N_ijk = this.faceNormal(h.face);
+        let N_jil = this.faceNormal(h.twin.face);
         
         let e_ij_unit = this.vector(h).unit();
         let y = e_ij_unit.dot(N_ijk.cross(N_jil));
@@ -254,9 +254,15 @@ class Geometry {
 	 * @param {module:Core.Vertex} v The vertex whose circumcentric dual area needs to be computed.
 	 * @returns {number}
 	 */
+	// ? What is this? 
 	circumcentricDualArea(v) {
-		// TODO
-
+		let totalArea = 0;
+        for (let h of v.adjacentHalfedges()){   // iterator
+			let theta = this.dihedralAngle(h);
+			let v = this.vector(h).unit();
+            v.scaleBy(theta);
+            totalNormal.incrementBy(v);
+		} 
 		return 0.0; // placeholder
 	}
 
@@ -270,10 +276,8 @@ class Geometry {
 		let n = new Vector();
 		for (let f of v.adjacentFaces()) {
 			let normal = this.faceNormal(f);
-
 			n.incrementBy(normal);
 		}
-
 		n.normalize();
 
 		return n;
@@ -286,9 +290,14 @@ class Geometry {
 	 * @returns {module:LinearAlgebra.Vector}
 	 */
 	vertexNormalAreaWeighted(v) {
-		// TODO
-
-		return new Vector(); // placeholder
+		let n = new Vector();
+		for (let f of v.adjacentFaces()) {
+			let normal = this.faceNormal(f);
+			normal.scaleBy(this.area(f));
+			n.incrementBy(normal);
+		}
+		n.normalize();
+		return n;
 	}
 
 	/**
@@ -312,12 +321,20 @@ class Geometry {
 	 * Computes the normal at a vertex using the "gauss curvature" method.
 	 * @method module:Core.Geometry#vertexNormalGaussCurvature
 	 * @param {module:Core.Vertex} v The vertex on which the normal needs to be computed.
-	 * @returns {module:LinearAlgebra.Vector}
+	 * @returns {module:LinearAlgeb ra.Vector}
 	 */
-	vertexNormalGaussCurvature(v) {
-		// TODO
-
-		return new Vector(); // placeholder
+	// ? What the hell is this? What does this mean? 
+	// Also, In the equations no one mentioned to unitize the final vector. Why we just do in
+	// the end...?
+	vertexNormalGaussCurvature(v) { 
+		let totalNormal  = new Vector();
+        for (let h of v.adjacentHalfedges()){   // iterator
+			let theta = this.dihedralAngle(h);
+			let v = this.vector(h).unit();
+            v.scaleBy(theta);
+            totalNormal.incrementBy(v);
+		} 
+		return totalNormal.unit();
 	}
 
 	/**
@@ -326,10 +343,17 @@ class Geometry {
 	 * @param {module:Core.Vertex} v The vertex on which the normal needs to be computed.
 	 * @returns {module:LinearAlgebra.Vector}
 	 */
+	// ? What the hell is this? What does this mean? 
 	vertexNormalMeanCurvature(v) {
-		// TODO
-
-		return new Vector(); // placeholder
+		let totalNormal  = new Vector();
+        for (let h of v.adjacentHalfedges()){   // iterator
+			let cotan1 = this.cotan(h);
+			let cotan2 = this.cotan(h.twin);
+			let v = this.vector(h);
+            v.scaleBy(cotan1+cotan2);
+            totalNormal.incrementBy(v);
+		} 
+		return totalNormal.unit();
 	}
 
 	/**
@@ -364,9 +388,14 @@ class Geometry {
 	 * @returns {number}
 	 */
 	angleDefect(v) {
-		// TODO
-
-		return 0.0; // placeholder
+		let totalAngle = 0;
+        for (let c of v.adjacentCorners()) {   // iterator
+			totalAngle += this.angle(c);
+		} 
+		if (v.onBoundary) 
+			return Math.PI - totalAngle;
+		else
+			return 2*Math.PI - totalAngle;
 	}
 
 	/**
@@ -376,7 +405,11 @@ class Geometry {
 	 * @returns {number}
 	 */
 	scalarGaussCurvature(v) {
-		return this.angleDefect(v);
+		let totalangle = 0;
+        for (let c of v.adjacentCorners()) {   // iterator
+			totalangle += this.angle(c);
+		} 
+		return 2*Math.PI-totalangle;
 	}
 
 	/**
@@ -385,10 +418,15 @@ class Geometry {
 	 * @param {module:Core.Vertex} v The vertex whose mean curvature needs to be computed.
 	 * @returns {number}
 	 */
+	// ? What is this? 
 	scalarMeanCurvature(v) {
-		// TODO
-
-		return 0.0; // placeholder
+		let H = 0;
+        for (let h of v.adjacentHalfedges()){   // iterator
+			let theta = this.dihedralAngle(h);
+			let v = this.vector(h).norm;
+			H += theta*v
+		} 
+		return H;
 	}
 
 	/**
@@ -397,9 +435,8 @@ class Geometry {
 	 * @returns {number}
 	 */
 	totalAngleDefect() {
-		// TODO
-
-		return 0.0; // placeholder
+		let euler_c = this.mesh.eulerCharacteristic();
+		return 2 * Math.PI * euler_c; // placeholder
 	}
 
 	/**
