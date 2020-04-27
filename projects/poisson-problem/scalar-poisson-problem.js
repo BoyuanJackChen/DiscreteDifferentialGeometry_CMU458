@@ -18,21 +18,27 @@ class ScalarPoissonProblem {
 		this.vertexIndex = indexElements(geometry.mesh.vertices);
 
 		// TODO: build the laplace and mass matrices, and compute total area
-		this.A = SparseMatrix.identity(1, 1); // placeholder
-		this.M = SparseMatrix.identity(1, 1); // placeholder
-		this.totalArea = 0.0; // placeholder
+		this.A = geometry.laplaceMatrix(this.vertexIndex); 
+		this.M = geometry.massMatrix(this.vertexIndex); 
+		this.totalArea = geometry.totalArea(); 
 	}
 
 	/**
-	 * Computes the solution of the poisson problem Ax = -M(rho - rhoBar), where A
+	 * Computes the solution of the poisson problem ΔΦ=ρ, or Ax = -M(rho - rhoBar), where A
 	 * is the positive definite laplace matrix and M is the mass matrix.
 	 * @method module:Projects.ScalarPoissonProblem#solve
 	 * @param {module:LinearAlgebra.DenseMatrix} rho A scalar density of vertices of the input mesh.
 	 * @returns {module:LinearAlgebra.DenseMatrix}
 	 */
-	solve(rho) {
-		// TODO
+	solve(rho) {    // rho for ρ. 
+		var Mrho = this.M.timesDense(rho);
+		var rhoBar = Mrho.sum() / this.totalArea;
+		var rhoBarMatrix = DenseMatrix.constant(rhoBar, rho.nRows(), );
 
-		return DenseMatrix.zeros(rho.nRows(), 1); // placeholder
+		var b = this.M.timesDense(rhoBarMatrix.minus(rho));
+		let llt = this.A.chol();
+		let x = llt.solvePositiveDefinite(b);
+
+		return x; 
 	}
 }
