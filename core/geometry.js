@@ -322,9 +322,6 @@ class Geometry {
 	 * @param {module:Core.Vertex} v The vertex on which the normal needs to be computed.
 	 * @returns {module:LinearAlgeb ra.Vector}
 	 */
-	// ? What the hell is this? What does this mean? 
-	// Also, In the equations no one mentioned to unitize the final vector. Why we just do in
-	// the end...?
 	vertexNormalGaussCurvature(v) { 
 		let totalNormal  = new Vector();
         for (let h of v.adjacentHalfedges()){   // iterator
@@ -342,7 +339,6 @@ class Geometry {
 	 * @param {module:Core.Vertex} v The vertex on which the normal needs to be computed.
 	 * @returns {module:LinearAlgebra.Vector}
 	 */
-	// ? What the hell is this? What does this mean? 
 	vertexNormalMeanCurvature(v) {
 		let totalNormal  = new Vector();
         for (let h of v.adjacentHalfedges()){   // iterator
@@ -447,8 +443,8 @@ class Geometry {
 	principalCurvatures(v) {
 		let H = this.scalarMeanCurvature(v);
 		let K = this.scalarGaussCurvature(v);
-		let k1 = 3*H - Math.sqrt(H*H+K);
-		let k2 = -H + Math.sqrt(H*H+K);
+		let k1 = H + Math.sqrt(H*H+K);
+		let k2 = H - Math.sqrt(H*H+K);
 		return [k2, k1];
 	}
 
@@ -461,7 +457,28 @@ class Geometry {
 	 * @returns {module:LinearAlgebra.SparseMatrix}
 	 */
 	laplaceMatrix(vertexIndex) {
-		return SparseMatrix.identity(1, 1); // placeholder
+		var num_ver = this.mesh.vertices.length;
+		var triplet = new Triplet(num_ver, num_ver);
+
+		for (let vi of this.mesh.vertices) { 
+			var i = vertexIndex[vi];
+			// Loop through each vertex. Calculate the values on that row
+			var c_ui = 0; 
+
+			for (let h of vi.adjacentHalfedges()){ 
+				let cotan1 = this.cotan(h);
+				let cotan2 = this.cotan(h.twin);
+				c_ui += 0.5*(cotan1+cotan2);  // This is the diagonal entry, ith row ith column
+
+				let v_j  = h.twin.vertex;
+				let j = vertexIndex[v_j];
+				let c_uj = -0.5*(cotan1+cotan2);
+				triplet.addEntry(c_uj, i, j);
+			} 
+			triplet.addEntry(c_ui+1e-8, i, i);  // Shift the diagonal by epsilon
+		}
+
+		return SparseMatrix.fromTriplet(triplet); 
 	}
 
 	/**
@@ -472,9 +489,16 @@ class Geometry {
 	 * @returns {module:LinearAlgebra.SparseMatrix}
 	 */
 	massMatrix(vertexIndex) {
-		// TODO
+		var num_ver = this.mesh.vertices.length;
+		var triplet = new Triplet(num_ver, num_ver);
 
-		return SparseMatrix.identity(1, 1); // placeholder
+		for (let vi of this.mesh.vertices) {
+			let i = vertexIndex[vi];
+			let area = this.barycentricDualArea(vi);
+			triplet.addEntry(area, i, i);
+		}
+
+		return SparseMatrix.fromTriplet(triplet);
 	}
 
 	/**
